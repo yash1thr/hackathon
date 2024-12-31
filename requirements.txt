@@ -1,0 +1,7 @@
+unstructured_client
+langchain
+langchain-community
+langchain-openai
+unstructured
+chromadb
+poppler-utils
