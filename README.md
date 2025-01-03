@@ -1,5 +1,7 @@
 ## Architecture Diagram, Reference - Alejandro
 ![image](https://github.com/user-attachments/assets/987d46b5-b4ea-456b-9003-153848ec5bc6)
+## Overview
+This project implements the multimodal RAG using GPT-4 and Unstructed.io. It processes the pdf files to extract tables, images and text using Unstructerd.io library, summarize it then embed the summaries along with the original input and insert into Vector Database. The system is built using `Streamlit` for the user interface and answers the users question using RAG mechanism.
 
 To run the application install the requirements and command -
 ```
