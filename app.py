@@ -22,7 +22,9 @@ from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from base64 import b64decode
+import chromadb
 
+chromadb.api.client.SharedSystemClient.clear_system_cache()
 
 os.environ['OPENAI_API_KEY']=''
 working_dir = os.getcwd()
@@ -166,13 +168,13 @@ def setup_vectorstore(elements):
     prompt = ChatPromptTemplate.from_messages(messages)
     chain = prompt | ChatOpenAI(model="gpt-4o-mini") | StrOutputParser()
     image_summaries = chain.batch(images)
-    vectorstore = Chroma(collection_name="multi_modal_rag", embedding_function=OpenAIEmbeddings())
+    st.session_state.vectorstore = Chroma(collection_name="multi_modal_rag", embedding_function=OpenAIEmbeddings())
 
     # The storage layer
     store = InMemoryStore()
     id_key = "doc_id"
-    retriever = MultiVectorRetriever(
-        vectorstore=vectorstore,
+    st.session_state.retriever = MultiVectorRetriever(
+        vectorstore=st.session_state.vectorstore,
         docstore=store,
         id_key=id_key,
     )
@@ -181,35 +183,35 @@ def setup_vectorstore(elements):
     summary_texts = [
         Document(page_content=summary, metadata={id_key: doc_ids[i]}) for i, summary in enumerate(text_summaries)
     ]
-    retriever.vectorstore.add_documents(summary_texts)
-    retriever.docstore.mset(list(zip(doc_ids, texts)))
+    st.session_state.retriever.vectorstore.add_documents(summary_texts)
+    st.session_state.retriever.docstore.mset(list(zip(doc_ids, texts)))
 
     # Add tables
     table_ids = [str(uuid.uuid4()) for _ in tables]
     summary_tables = [
         Document(page_content=summary, metadata={id_key: table_ids[i]}) for i, summary in enumerate(table_summaries)
     ]
-    retriever.vectorstore.add_documents(summary_tables)
-    retriever.docstore.mset(list(zip(table_ids, tables)))
+    st.session_state.retriever.vectorstore.add_documents(summary_tables)
+    st.session_state.retriever.docstore.mset(list(zip(table_ids, tables)))
 
     # Add image summaries
     img_ids = [str(uuid.uuid4()) for _ in images]
     summary_img = [
         Document(page_content=summary, metadata={id_key: img_ids[i]}) for i, summary in enumerate(image_summaries)
     ]
-    retriever.vectorstore.add_documents(summary_img)
-    retriever.docstore.mset(list(zip(img_ids, images)))
+    st.session_state.retriever.vectorstore.add_documents(summary_img)
+    st.session_state.retriever.docstore.mset(list(zip(img_ids, images)))
+
     chain = (
       {
-          "context": retriever | RunnableLambda(parse_docs),
+          "context": st.session_state.retriever | RunnableLambda(parse_docs),
           "question": RunnablePassthrough(),
       }
       | RunnableLambda(build_prompt)
       | ChatOpenAI(model="gpt-4o-mini")
       | StrOutputParser()
     )
-    res=chain.invoke('what is attention mechanism')
-    return chain,res
+    return chain
 
 
 st.set_page_config(
@@ -236,9 +238,8 @@ if uploaded_file:
         progress.progress(1/ 3, text='Extracting data from Unstructred.io')
         elements= load_documents(file_path)
         progress.progress(2/ 3, text='Adding to VectorDB')
-        conversation_chain,res = setup_vectorstore(elements)
+        conversation_chain= setup_vectorstore(elements)
         progress.progress(1.0, text='Successfully loaded to VectorDB')
-        st.markdown(res)
         st.session_state.conversation_chain = conversation_chain
     
 for message in st.session_state.chat_history:
