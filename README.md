@@ -1,8 +1,10 @@
-**Architecture Diagram**
-Reference - Alejandro
+## Architecture Diagram, Reference - Alejandro
 ![image](https://github.com/user-attachments/assets/987d46b5-b4ea-456b-9003-153848ec5bc6)
 
-To run the application install the requirements and command - streamlit run .\app.py
+To run the application install the requirements and command -
+```
+streamlit run .\app.py
+```
 
 **Results-**
 
