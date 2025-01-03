@@ -259,6 +259,7 @@ if user_input:
         else:
             response =st.session_state.conversation_chain.invoke(user_input)
         assistant_response = response
+        st.session_state.vectorstore.get()
         st.markdown(assistant_response)
         st.session_state.chat_history.append({"role": "assistant", "content": assistant_response})
 
